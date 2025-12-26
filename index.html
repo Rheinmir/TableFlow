@@ -9,6 +9,14 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Cpath d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'/%3E%3C/svg%3E">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Khởi tạo Dark Mode ngay lập tức để tránh hiện tượng nháy trắng (FOUC)
+        if (localStorage.getItem('tf_dark_mode') === 'true' || (!('tf_dark_mode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
@@ -16,13 +24,21 @@
             --apple-bg: #f5f5f7;
             --apple-card: rgba(255, 255, 255, 0.9);
             --apple-accent: #0071e3;
+            --apple-text: #1d1d1f;
+        }
+
+        .dark {
+            --apple-bg: #000000;
+            --apple-card: rgba(28, 28, 30, 0.8);
+            --apple-text: #f5f5f7;
         }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--apple-bg);
-            color: #1d1d1f;
+            color: var(--apple-text);
             -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .glass-card {
@@ -31,6 +47,12 @@
             -webkit-backdrop-filter: blur(30px);
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .dark .glass-card {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
         }
 
         .mac-btn {
@@ -44,12 +66,18 @@
             background: #d1d1d6;
             border-radius: 10px;
         }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #48484a;
+        }
 
         .editable-cell:focus, .editable-header:focus {
             outline: none;
             background: white;
             box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
             border-radius: 8px;
+        }
+        .dark .editable-cell:focus, .dark .editable-header:focus {
+            background: #2c2c2e;
         }
 
         #logicSidebar, #separatorModal {
@@ -67,46 +95,65 @@
         }
 
         .ghost-text { color: #d1d1d6; font-style: italic; }
+        .dark .ghost-text { color: #48484a; }
         .ghost-row { opacity: 0.4; pointer-events: none; user-select: none; }
         
         .modal-backdrop {
             background: rgba(0,0,0,0.2);
             backdrop-filter: blur(4px);
         }
+        .dark .modal-backdrop {
+            background: rgba(0,0,0,0.6);
+        }
+
+        /* Dark mode overrides for scrollbars and textareas */
+        .dark textarea {
+            color: #ffffff;
+            background-color: rgba(44, 44, 46, 0.5) !important;
+        }
     </style>
 </head>
-<body class="min-h-screen overflow-x-hidden">
+<body class="min-h-screen overflow-x-hidden dark:bg-black">
 
     <!-- Header Navigation -->
-    <nav class="h-16 flex items-center justify-between px-10 border-b border-gray-200/50 bg-white/70 sticky top-0 z-40 backdrop-blur-xl">
+    <nav class="h-16 flex items-center justify-between px-10 border-b border-gray-200/50 dark:border-white/10 bg-white/70 dark:bg-black/70 sticky top-0 z-40 backdrop-blur-xl">
         <div class="flex items-center gap-4">
-            <div class="w-10 h-10 bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center shadow-xl">
+            <div class="w-10 h-10 bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center shadow-xl border border-white/20">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
             </div>
-            <span class="font-extrabold text-2xl tracking-tight italic">TableFlow <span class="text-blue-600">Dev</span></span>
+            <span class="font-extrabold text-2xl tracking-tight italic dark:text-white">TableFlow <span class="text-blue-600">Dev</span></span>
         </div>
-        <button onclick="toggleLogicSidebar()" class="mac-btn flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white hover:bg-black rounded-full text-sm font-bold shadow-lg">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-            Engineering Center
-        </button>
+        
+        <div class="flex items-center gap-3">
+            <!-- Dark Mode Toggle Button -->
+            <button onclick="toggleDarkMode()" class="mac-btn w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors">
+                <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+            </button>
+
+            <button onclick="toggleLogicSidebar()" class="mac-btn flex items-center gap-2 px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-black hover:bg-black dark:hover:bg-gray-200 rounded-full text-sm font-bold shadow-lg">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                Engineering Center
+            </button>
+        </div>
     </nav>
 
     <main class="max-w-[1900px] mx-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <!-- Input Section -->
         <div class="lg:col-span-3 flex flex-col gap-6">
-            <div class="glass-card p-8 rounded-[3rem] flex flex-col min-h-[650px] border border-white">
+            <div class="glass-card p-8 rounded-[3rem] flex flex-col min-h-[650px] border border-white dark:border-white/5">
                 <div class="flex items-center justify-between mb-6">
                     <span class="section-label">Dữ liệu thô (Source)</span>
                     <button onclick="clearData()" class="text-[10px] font-black text-red-500 uppercase hover:text-red-600 transition-colors">Clear</button>
                 </div>
                 <textarea 
                     id="rawInput" 
-                    class="flex-1 w-full p-6 bg-gray-50/50 rounded-3xl border-none focus:ring-2 focus:ring-blue-100 text-sm font-mono leading-relaxed resize-none custom-scrollbar shadow-inner"
+                    class="flex-1 w-full p-6 bg-gray-50/50 dark:bg-zinc-900/50 rounded-3xl border-none focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30 text-sm font-mono leading-relaxed resize-none custom-scrollbar shadow-inner"
                     placeholder="Dán dữ liệu tại đây..."></textarea>
                 <button 
                     onclick="processData()"
-                    class="mt-8 w-full bg-blue-600 text-white py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest mac-btn shadow-2xl shadow-blue-200 hover:bg-blue-700"
+                    class="mt-8 w-full bg-blue-600 text-white py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest mac-btn shadow-2xl shadow-blue-200 dark:shadow-blue-900/20 hover:bg-blue-700"
                 >
                     Thực thi Logic & Phân cột
                 </button>
@@ -115,28 +162,28 @@
 
         <!-- Result Grid -->
         <div class="lg:col-span-9 flex flex-col gap-6">
-            <div class="glass-card rounded-[3rem] flex flex-col overflow-hidden h-[calc(100vh-180px)] border border-white">
-                <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-white/40 sticky top-0 z-10 backdrop-blur-md">
-                    <div class="flex items-center gap-4">
+            <div class="glass-card rounded-[3rem] flex flex-col overflow-hidden h-[calc(100vh-180px)] border border-white dark:border-white/5">
+                <div class="p-8 border-b border-gray-100 dark:border-white/5 flex items-center justify-between bg-white/40 dark:bg-zinc-900/20 sticky top-0 z-10 backdrop-blur-md">
+                    <div class="flex items-center gap-6">
                         <span class="section-label !mb-0">Interactive Grid</span>
                         <div class="flex gap-2">
-                            <button onclick="addColumn()" title="Thêm cột mới" class="mac-btn w-9 h-9 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-100 shadow-sm border border-blue-200">
+                            <button onclick="addColumn()" title="Thêm cột mới" class="mac-btn w-9 h-9 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center hover:bg-blue-100 shadow-sm border border-blue-200 dark:border-blue-800">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                             </button>
-                            <button onclick="openSeparatorModal()" title="Quản lý dấu ngăn cách" class="mac-btn w-9 h-9 bg-gray-50 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-100 shadow-sm border border-gray-200">
+                            <button onclick="openSeparatorModal()" title="Quản lý dấu ngăn cách" class="mac-btn w-9 h-9 bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-gray-400 rounded-xl flex items-center justify-center hover:bg-gray-100 shadow-sm border border-gray-200 dark:border-zinc-700">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                             </button>
                         </div>
                     </div>
                     <div class="flex gap-3">
                         <button onclick="copyFormattedOutput()" class="mac-btn px-6 py-3 bg-blue-600 text-white rounded-full text-xs font-black shadow-lg hover:bg-blue-700">Copy Template</button>
-                        <button onclick="copyToExcel()" class="mac-btn px-6 py-3 bg-white text-gray-900 rounded-full text-xs font-black border border-gray-200 hover:border-gray-900 shadow-sm">Excel</button>
+                        <button onclick="copyToExcel()" class="mac-btn px-6 py-3 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white rounded-full text-xs font-black border border-gray-200 dark:border-zinc-700 hover:border-gray-900 shadow-sm">Excel</button>
                     </div>
                 </div>
 
-                <div class="flex-1 overflow-auto custom-scrollbar">
+                <div class="flex-1 overflow-auto custom-scrollbar dark:bg-zinc-900/10">
                     <table class="w-full text-left border-collapse min-w-full">
-                        <thead class="sticky top-0 bg-white/95 backdrop-blur-md z-10 border-b border-gray-100">
+                        <thead class="sticky top-0 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md z-10 border-b border-gray-100 dark:border-white/5">
                             <tr id="tableHeaderRow"></tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
@@ -149,49 +196,45 @@
     <!-- Modal: Separator Manager -->
     <div id="separatorModal" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
         <div class="absolute inset-0 modal-backdrop" onclick="closeSeparatorModal()"></div>
-        <div class="glass-card w-[450px] p-8 rounded-[2.5rem] relative z-10 border border-white shadow-2xl scale-95 transition-transform duration-300">
+        <div class="glass-card w-[450px] p-8 rounded-[2.5rem] relative z-10 border border-white dark:border-white/10 shadow-2xl scale-95 transition-transform duration-300">
             <div class="flex items-center justify-between mb-6">
-                <h3 class="font-black text-xl tracking-tight">Dấu ngăn cách</h3>
-                <button onclick="closeSeparatorModal()" class="p-2 hover:bg-gray-100 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                <h3 class="font-black text-xl tracking-tight dark:text-white">Dấu ngăn cách</h3>
+                <button onclick="closeSeparatorModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"><svg class="w-5 h-5 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
             </div>
             
             <div class="space-y-6">
                 <div>
                     <span class="section-label">Đang áp dụng</span>
-                    <div id="activeSeparators" class="flex flex-wrap gap-2 mb-4">
-                        <!-- Active badges -->
-                    </div>
+                    <div id="activeSeparators" class="flex flex-wrap gap-2 mb-4"></div>
                 </div>
 
-                <div class="pt-4 border-t border-gray-100">
+                <div class="pt-4 border-t border-gray-100 dark:border-white/5">
                     <span class="section-label">Phát hiện trong dữ liệu</span>
-                    <div id="detectedSeparators" class="flex flex-wrap gap-2">
-                        <!-- Detected badges -->
-                    </div>
+                    <div id="detectedSeparators" class="flex flex-wrap gap-2"></div>
                 </div>
 
                 <div class="pt-4">
                     <span class="section-label">Thêm thủ công</span>
                     <div class="flex gap-2">
-                        <input id="customSeparator" type="text" maxlength="3" class="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none" placeholder="Nhập ký tự...">
+                        <input id="customSeparator" type="text" maxlength="3" class="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900 outline-none dark:text-white" placeholder="Ký tự...">
                         <button onclick="addCustomSeparator()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold mac-btn">Add</button>
                     </div>
                 </div>
             </div>
             
-            <button onclick="closeSeparatorModal(); processData();" class="w-full mt-8 bg-black text-white py-4 rounded-2xl font-bold text-sm mac-btn shadow-xl">Hoàn tất & Cập nhật</button>
+            <button onclick="closeSeparatorModal(); processData();" class="w-full mt-8 bg-black dark:bg-white text-white dark:text-black py-4 rounded-2xl font-bold text-sm mac-btn shadow-xl">Cập nhật hệ thống</button>
         </div>
     </div>
 
     <!-- Sidebar Panel -->
-    <aside id="logicSidebar" class="fixed top-0 right-0 w-[600px] h-full bg-white shadow-[-30px_0_60px_rgba(0,0,0,0.08)] z-50 translate-x-full flex flex-col border-l border-gray-200">
-        <div class="p-10 border-b border-gray-100 flex items-center justify-between">
+    <aside id="logicSidebar" class="fixed top-0 right-0 w-[600px] h-full bg-white dark:bg-zinc-950 shadow-[-30px_0_60px_rgba(0,0,0,0.1)] z-50 translate-x-full flex flex-col border-l border-gray-200 dark:border-white/5">
+        <div class="p-10 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
             <div>
-                <h3 class="font-black text-3xl tracking-tighter">Engineering</h3>
+                <h3 class="font-black text-3xl tracking-tighter dark:text-white">Engineering</h3>
                 <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Logic & Mapping Pack</p>
             </div>
-            <button onclick="toggleLogicSidebar()" class="p-3 hover:bg-gray-100 rounded-full transition-all">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            <button onclick="toggleLogicSidebar()" class="p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-all">
+                <svg class="w-6 h-6 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         
@@ -199,42 +242,31 @@
             <!-- Template Config -->
             <div class="space-y-4">
                 <span class="section-label">Output Format Template</span>
-                <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 shadow-inner">
-                    <input id="templateInput" type="text" oninput="updateTemplate(this.value)" class="w-full bg-transparent border-none focus:ring-0 font-mono text-base text-blue-600 font-bold" />
+                <div class="bg-gray-50 dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-white/5 shadow-inner">
+                    <input id="templateInput" type="text" oninput="updateTemplate(this.value)" class="w-full bg-transparent border-none focus:ring-0 font-mono text-base text-blue-600 dark:text-blue-400 font-bold" />
                     <p class="text-[11px] text-gray-400 mt-3 font-medium italic">Gợi ý: Dùng {Mã} hoặc {Tên cột} trong ngoặc nhọn.</p>
                 </div>
             </div>
 
             <!-- Pack Export -->
-            <div class="space-y-4 pt-6 border-t border-gray-50">
+            <div class="space-y-4 pt-6 border-t border-gray-100 dark:border-white/5">
                 <div class="flex items-center justify-between">
                     <span class="section-label">Logic Pack (JSON)</span>
-                    <button onclick="copyLogicJson()" class="text-[10px] text-blue-600 font-black uppercase hover:underline">Copy Full Pack</button>
+                    <button onclick="copyLogicJson()" class="text-[10px] text-blue-600 dark:text-blue-400 font-black uppercase hover:underline">Copy Full Pack</button>
                 </div>
-                <textarea id="logicJsonArea" readonly class="w-full h-56 p-6 bg-gray-900 text-green-400 rounded-3xl text-[11px] font-mono border-none focus:ring-0 custom-scrollbar leading-relaxed"></textarea>
-            </div>
-
-            <!-- AI Prompts -->
-            <div class="space-y-4 pt-6 border-t border-gray-50">
-                <span class="section-label">Nâng cấp Logic qua AI</span>
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100 cursor-pointer mac-btn hover:bg-indigo-100" onclick="copyPromptTemplate(1)">
-                        <p class="text-[11px] font-black text-indigo-500 uppercase mb-2">Refactor hàm Phân tách</p>
-                        <p class="text-[12px] text-gray-600 leading-snug">"Sửa hàm extractLogic để ưu tiên tách dữ liệu theo logic tùy chỉnh. Đảm bảo trả về mảng khớp với số lượng cột hiện tại."</p>
-                    </div>
-                </div>
+                <textarea id="logicJsonArea" readonly class="w-full h-56 p-6 bg-gray-900 text-green-400 rounded-3xl border-none focus:ring-0 custom-scrollbar leading-relaxed"></textarea>
             </div>
 
             <!-- Import -->
-            <div class="space-y-4 pt-6 border-t border-gray-50">
+            <div class="space-y-4 pt-6 border-t border-gray-100 dark:border-white/5">
                 <span class="section-label">Import System Logic</span>
-                <textarea id="importJsonArea" class="w-full h-32 p-6 bg-white rounded-3xl text-[11px] font-mono border border-gray-200 focus:border-blue-500 outline-none custom-scrollbar" placeholder="Dán JSON vào đây..."></textarea>
-                <button onclick="importLogic()" class="w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-sm mac-btn shadow-2xl shadow-blue-100 uppercase tracking-widest">Update Engine</button>
+                <textarea id="importJsonArea" class="w-full h-32 p-6 bg-white dark:bg-zinc-900 rounded-3xl text-[11px] font-mono border border-gray-200 dark:border-white/5 focus:border-blue-500 outline-none custom-scrollbar dark:text-white" placeholder="Dán JSON vào đây..."></textarea>
+                <button onclick="importLogic()" class="w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-sm mac-btn shadow-2xl shadow-blue-100 dark:shadow-none uppercase tracking-widest">Update Engine</button>
             </div>
         </div>
     </aside>
 
-    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 bg-black text-white rounded-full text-sm font-black shadow-2xl opacity-0 transition-all z-[100] pointer-events-none backdrop-blur-xl border border-white/10">Đã sao chép!</div>
+    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 bg-black dark:bg-zinc-800 text-white rounded-full text-sm font-black shadow-2xl opacity-0 transition-all z-[100] pointer-events-none backdrop-blur-xl border border-white/10">Đã sao chép!</div>
 
     <script>
         // --- CORE STATE ---
@@ -251,21 +283,21 @@
             description: "Hệ thống cưỡng bức số tiến và tự động ánh xạ dữ liệu theo dấu ngăn cách tùy biến.",
             outputTemplate: "{Mã}: {Nội dung chính}",
             code: `function extractLogic(line, activeSeparators) {
-    // 1. Dọn dẹp mã Bxx cũ nếu có ở đầu dòng
     const cleanLine = line.replace(/^[Bb]\\s*0*(\\d+)\\s*[:|-]?\\s*/, "").trim();
-    
-    // 2. Tạo regex từ danh sách separators đang kích hoạt
     const escapedSeps = activeSeparators.map(s => s.replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&'));
     const sepRegex = new RegExp(escapedSeps.join('|'));
-    
-    // 3. Tách dữ liệu
-    const parts = cleanLine.split(sepRegex).map(p => p.trim());
-    
-    return parts;
+    return cleanLine.split(sepRegex).map(p => p.trim());
 }`
         };
 
         let extractFunc = null;
+
+        // --- THEME LOGIC ---
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const isDark = html.classList.toggle('dark');
+            localStorage.setItem('tf_dark_mode', isDark);
+        }
 
         window.onload = () => {
             const sc = localStorage.getItem('tf_v9_cols');
@@ -295,24 +327,19 @@
             const input = document.getElementById('rawInput').value;
             localStorage.setItem('tf_v9_input', input);
             if (!input.trim()) { processedRows = []; renderTableBody(); return; }
-
             const lines = input.split('\n');
             processedRows = [];
-            
             let sequenceCounter = 1;
             for (const line of lines) {
                 if (!line.trim()) continue;
                 const match = line.match(/[Bb]\s*0*(\d+)/);
                 if (match) { sequenceCounter = parseInt(match[1], 10); break; }
             }
-
             lines.forEach((line, idx) => {
                 if (!line.trim()) return;
                 const dataParts = extractFunc(line, enabledSeparators);
                 let rowObj = { id: Date.now() + idx };
-                
                 rowObj[columns[0].id] = "B" + (sequenceCounter + idx);
-                
                 for(let i = 1; i < columns.length; i++) {
                     rowObj[columns[i].id] = dataParts[i - 1] || "";
                 }
@@ -324,8 +351,8 @@
         function getPlaceholderValue(title, rowIndex) {
             const t = title.toLowerCase();
             if (t.includes('mã')) return `B${rowIndex + 1}`;
-            if (t.includes('nội dung')) return `Hạng mục mẫu số ${rowIndex + 1}`;
-            return `Mẫu dữ liệu ${title}`;
+            if (t.includes('nội dung')) return `Hàng mẫu ${rowIndex + 1}`;
+            return `---`;
         }
 
         function renderRowWithTemplate(row) {
@@ -338,27 +365,22 @@
             return template;
         }
 
-        // --- UI ACTIONS ---
         function refreshUI() {
             renderHeaders();
             renderTableBody();
             renderSeparatorBadges();
-            document.getElementById('logicJsonArea').value = JSON.stringify({
-                ...currentLogic, 
-                current_columns: columns.map(c => c.title),
-                active_separators: enabledSeparators
-            }, null, 2);
+            document.getElementById('logicJsonArea').value = JSON.stringify({...currentLogic, current_columns: columns.map(c => c.title), active_separators: enabledSeparators}, null, 2);
         }
 
         function renderHeaders() {
             const row = document.getElementById('tableHeaderRow');
             row.innerHTML = columns.map(col => `
-                <th class="py-6 px-8 border-b border-gray-100 group relative bg-white/50">
-                    <div contenteditable="true" onblur="updateColTitle('${col.id}', this.innerText)" class="editable-header text-[11px] font-black text-gray-400 uppercase tracking-widest outline-none pr-10">
+                <th class="py-6 px-8 border-b border-gray-100 dark:border-white/5 group relative bg-white/50 dark:bg-zinc-900/50">
+                    <div contenteditable="true" onblur="updateColTitle('${col.id}', this.innerText)" class="editable-header text-[11px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest outline-none pr-10">
                          ${col.title}
                     </div>
                     <button onclick="removeColumn('${col.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                 </th>
             `).join('');
@@ -370,7 +392,7 @@
             if (processedRows.length === 0) {
                 let ghostHtml = "";
                 for (let i = 0; i < 6; i++) {
-                    ghostHtml += `<tr class="ghost-row border-b border-gray-50/50">${columns.map((c, ci) => `
+                    ghostHtml += `<tr class="ghost-row border-b border-gray-50/50 dark:border-white/5">${columns.map((c, ci) => `
                         <td class="py-5 px-8 font-medium">
                             <div class="ghost-text text-sm ${ci === 0 ? 'text-blue-400/50 font-black' : ''}">${getPlaceholderValue(c.title, i)}</div>
                         </td>`).join('')}</tr>`;
@@ -379,16 +401,15 @@
                 return;
             }
             tbody.innerHTML = processedRows.map((row, rIdx) => `
-                <tr class="hover:bg-gray-50/70 transition-all border-b border-gray-50/50">
+                <tr class="hover:bg-gray-50/70 dark:hover:bg-zinc-900/40 transition-all border-b border-gray-50/50 dark:border-white/5">
                     ${columns.map((col, ci) => `
-                        <td class="py-5 px-8 ${ci === 0 ? 'font-black text-blue-600' : 'text-gray-700'}">
+                        <td class="py-5 px-8 ${ci === 0 ? 'font-black text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}">
                             <div contenteditable="true" onblur="updateVal(${rIdx}, '${col.id}', this.innerText)" class="editable-cell text-sm outline-none leading-relaxed">${row[col.id]}</div>
                         </td>`).join('')}
                 </tr>
             `).join('');
         }
 
-        // --- SEPARATOR LOGIC ---
         function openSeparatorModal() {
             document.getElementById('separatorModal').classList.remove('hidden');
             document.getElementById('separatorModal').classList.add('flex');
@@ -405,12 +426,11 @@
             const input = document.getElementById('rawInput').value;
             const container = document.getElementById('detectedSeparators');
             const found = potentialSeparators.filter(s => input.includes(s) && !enabledSeparators.includes(s));
-            
             container.innerHTML = found.length > 0 ? found.map(s => `
-                <button onclick="toggleSeparator('${s}')" class="px-3 py-1 bg-gray-100 hover:bg-blue-100 rounded-lg text-xs font-bold text-gray-500 transition-all">
+                <button onclick="toggleSeparator('${s}')" class="px-3 py-1 bg-gray-100 dark:bg-zinc-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg text-xs font-bold text-gray-500 transition-all">
                     ${s === '\t' ? 'Tab' : (s === '  ' ? 'Spaces' : s)}
                 </button>
-            `).join('') : '<p class="text-[10px] text-gray-300 italic">Không tìm thấy dấu mới...</p>';
+            `).join('') : '<p class="text-[10px] text-gray-300 italic">Không có dấu mới...</p>';
         }
 
         function renderSeparatorBadges() {
@@ -425,25 +445,15 @@
         }
 
         function toggleSeparator(s) {
-            if (enabledSeparators.includes(s)) {
-                enabledSeparators = enabledSeparators.filter(x => x !== s);
-            } else {
-                enabledSeparators.push(s);
-            }
-            renderSeparatorBadges();
-            detectSeparators();
+            enabledSeparators = enabledSeparators.includes(s) ? enabledSeparators.filter(x => x !== s) : [...enabledSeparators, s];
+            renderSeparatorBadges(); detectSeparators();
         }
 
         function addCustomSeparator() {
             const val = document.getElementById('customSeparator').value;
-            if (val && !enabledSeparators.includes(val)) {
-                enabledSeparators.push(val);
-                document.getElementById('customSeparator').value = "";
-                renderSeparatorBadges();
-            }
+            if (val && !enabledSeparators.includes(val)) { enabledSeparators.push(val); document.getElementById('customSeparator').value = ""; renderSeparatorBadges(); }
         }
 
-        // --- CORE ACTIONS ---
         function addColumn() { columns.push({ id: 'c' + Date.now(), title: 'Cột mới' }); refreshUI(); processData(); }
         function removeColumn(id) { if (columns.length > 1) { columns = columns.filter(c => c.id !== id); refreshUI(); processData(); } }
         function updateColTitle(id, val) { const col = columns.find(c => c.id === id); if (col) col.title = val.trim(); localStorage.setItem('tf_v9_cols', JSON.stringify(columns)); refreshUI(); }
@@ -454,7 +464,7 @@
         function copyFormattedOutput() {
             if (processedRows.length === 0) return;
             const out = processedRows.map(row => renderRowWithTemplate(row)).join('\n');
-            navigator.clipboard.writeText(out); showToast("Đã copy toàn bộ theo Template!");
+            navigator.clipboard.writeText(out); showToast("Đã copy theo Template!");
         }
 
         function importLogic() {
@@ -462,27 +472,11 @@
                 const p = JSON.parse(document.getElementById('importJsonArea').value);
                 if (p.current_columns) columns = p.current_columns.map(t => ({ id: 'c' + Math.random(), title: t }));
                 if (p.active_separators) enabledSeparators = p.active_separators;
-                currentLogic = {...currentLogic, ...p}; 
-                delete currentLogic.current_columns;
-                delete currentLogic.active_separators;
-                localStorage.setItem('tf_v9_logic', JSON.stringify(currentLogic)); 
-                localStorage.setItem('tf_v9_cols', JSON.stringify(columns));
-                localStorage.setItem('tf_v9_seps', JSON.stringify(enabledSeparators));
+                currentLogic = {...currentLogic, ...p}; delete currentLogic.current_columns; delete currentLogic.active_separators;
+                localStorage.setItem('tf_v9_logic', JSON.stringify(currentLogic)); localStorage.setItem('tf_v9_cols', JSON.stringify(columns));
                 updateLogicEngine(); refreshUI(); processData();
                 showToast("System Updated!");
             } catch (e) { alert("JSON Error."); }
-        }
-
-        function copyPromptTemplate(id) {
-            const json = document.getElementById('logicJsonArea').value;
-            navigator.clipboard.writeText(`Dựa trên Logic Pack này:\n${json}\n\nHãy cập nhật extractLogic để tách dữ liệu theo Separator tùy chỉnh.`);
-            showToast("Đã copy Prompt!");
-        }
-
-        function copyToExcel() {
-            const h = columns.map(c => c.title).join('\t');
-            const b = processedRows.map(r => columns.map(c => r[c.id]).join('\t')).join('\n');
-            navigator.clipboard.writeText(h + '\n' + b); showToast("Copied for Excel!");
         }
 
         function copyLogicJson() { navigator.clipboard.writeText(document.getElementById('logicJsonArea').value); showToast("Logic Pack Copied!"); }

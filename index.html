@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TableFlow Pro - Smart Mapping Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --apple-bg: #f5f5f7;
+            --apple-card: rgba(255, 255, 255, 0.9);
+            --apple-accent: #0071e3;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--apple-bg);
+            color: #1d1d1f;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-card {
+            background: var(--apple-card);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        .mac-btn {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mac-btn:active { transform: scale(0.94); }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 10px;
+        }
+
+        .editable-cell:focus, .editable-header:focus {
+            outline: none;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15);
+            border-radius: 8px;
+        }
+
+        #logicSidebar, #separatorModal {
+            transition: transform 0.5s cubic-bezier(0.3, 1, 0.3, 1), opacity 0.3s ease;
+        }
+
+        .section-label {
+            font-size: 10px;
+            font-weight: 800;
+            color: #a1a1a6;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.6rem;
+            display: block;
+        }
+
+        .ghost-text { color: #d1d1d6; font-style: italic; }
+        .ghost-row { opacity: 0.4; pointer-events: none; user-select: none; }
+        
+        .modal-backdrop {
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="min-h-screen overflow-x-hidden">
+
+    <!-- Header Navigation -->
+    <nav class="h-16 flex items-center justify-between px-10 border-b border-gray-200/50 bg-white/70 sticky top-0 z-40 backdrop-blur-xl">
+        <div class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-gradient-to-br from-gray-800 to-black rounded-xl flex items-center justify-center shadow-xl">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+            <span class="font-extrabold text-2xl tracking-tight italic">TableFlow <span class="text-blue-600">Dev</span></span>
+        </div>
+        <button onclick="toggleLogicSidebar()" class="mac-btn flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white hover:bg-black rounded-full text-sm font-bold shadow-lg">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            Engineering Center
+        </button>
+    </nav>
+
+    <main class="max-w-[1900px] mx-auto p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Input Section -->
+        <div class="lg:col-span-3 flex flex-col gap-6">
+            <div class="glass-card p-8 rounded-[3rem] flex flex-col min-h-[650px] border border-white">
+                <div class="flex items-center justify-between mb-6">
+                    <span class="section-label">Dữ liệu thô (Source)</span>
+                    <button onclick="clearData()" class="text-[10px] font-black text-red-500 uppercase hover:text-red-600 transition-colors">Clear</button>
+                </div>
+                <textarea 
+                    id="rawInput" 
+                    class="flex-1 w-full p-6 bg-gray-50/50 rounded-3xl border-none focus:ring-2 focus:ring-blue-100 text-sm font-mono leading-relaxed resize-none custom-scrollbar shadow-inner"
+                    placeholder="Dán dữ liệu tại đây..."></textarea>
+                <button 
+                    onclick="processData()"
+                    class="mt-8 w-full bg-blue-600 text-white py-5 rounded-[1.5rem] font-black text-sm uppercase tracking-widest mac-btn shadow-2xl shadow-blue-200 hover:bg-blue-700"
+                >
+                    Thực thi Logic & Phân cột
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Grid -->
+        <div class="lg:col-span-9 flex flex-col gap-6">
+            <div class="glass-card rounded-[3rem] flex flex-col overflow-hidden h-[calc(100vh-180px)] border border-white">
+                <div class="p-8 border-b border-gray-100 flex items-center justify-between bg-white/40 sticky top-0 z-10 backdrop-blur-md">
+                    <div class="flex items-center gap-4">
+                        <span class="section-label !mb-0">Interactive Grid</span>
+                        <div class="flex gap-2">
+                            <button onclick="addColumn()" title="Thêm cột mới" class="mac-btn w-9 h-9 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-100 shadow-sm border border-blue-200">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                            </button>
+                            <button onclick="openSeparatorModal()" title="Quản lý dấu ngăn cách" class="mac-btn w-9 h-9 bg-gray-50 text-gray-600 rounded-xl flex items-center justify-center hover:bg-gray-100 shadow-sm border border-gray-200">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="copyFormattedOutput()" class="mac-btn px-6 py-3 bg-blue-600 text-white rounded-full text-xs font-black shadow-lg hover:bg-blue-700">Copy Template</button>
+                        <button onclick="copyToExcel()" class="mac-btn px-6 py-3 bg-white text-gray-900 rounded-full text-xs font-black border border-gray-200 hover:border-gray-900 shadow-sm">Excel</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse min-w-full">
+                        <thead class="sticky top-0 bg-white/95 backdrop-blur-md z-10 border-b border-gray-100">
+                            <tr id="tableHeaderRow"></tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal: Separator Manager -->
+    <div id="separatorModal" class="fixed inset-0 z-[60] flex items-center justify-center hidden">
+        <div class="absolute inset-0 modal-backdrop" onclick="closeSeparatorModal()"></div>
+        <div class="glass-card w-[450px] p-8 rounded-[2.5rem] relative z-10 border border-white shadow-2xl scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="font-black text-xl tracking-tight">Dấu ngăn cách</h3>
+                <button onclick="closeSeparatorModal()" class="p-2 hover:bg-gray-100 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <span class="section-label">Đang áp dụng</span>
+                    <div id="activeSeparators" class="flex flex-wrap gap-2 mb-4">
+                        <!-- Active badges -->
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-gray-100">
+                    <span class="section-label">Phát hiện trong dữ liệu</span>
+                    <div id="detectedSeparators" class="flex flex-wrap gap-2">
+                        <!-- Detected badges -->
+                    </div>
+                </div>
+
+                <div class="pt-4">
+                    <span class="section-label">Thêm thủ công</span>
+                    <div class="flex gap-2">
+                        <input id="customSeparator" type="text" maxlength="3" class="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-100 outline-none" placeholder="Nhập ký tự...">
+                        <button onclick="addCustomSeparator()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold mac-btn">Add</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="closeSeparatorModal(); processData();" class="w-full mt-8 bg-black text-white py-4 rounded-2xl font-bold text-sm mac-btn shadow-xl">Hoàn tất & Cập nhật</button>
+        </div>
+    </div>
+
+    <!-- Sidebar Panel -->
+    <aside id="logicSidebar" class="fixed top-0 right-0 w-[600px] h-full bg-white shadow-[-30px_0_60px_rgba(0,0,0,0.08)] z-50 translate-x-full flex flex-col border-l border-gray-200">
+        <div class="p-10 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h3 class="font-black text-3xl tracking-tighter">Engineering</h3>
+                <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Logic & Mapping Pack</p>
+            </div>
+            <button onclick="toggleLogicSidebar()" class="p-3 hover:bg-gray-100 rounded-full transition-all">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+            <!-- Template Config -->
+            <div class="space-y-4">
+                <span class="section-label">Output Format Template</span>
+                <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 shadow-inner">
+                    <input id="templateInput" type="text" oninput="updateTemplate(this.value)" class="w-full bg-transparent border-none focus:ring-0 font-mono text-base text-blue-600 font-bold" />
+                    <p class="text-[11px] text-gray-400 mt-3 font-medium italic">Gợi ý: Dùng {Mã} hoặc {Tên cột} trong ngoặc nhọn.</p>
+                </div>
+            </div>
+
+            <!-- Pack Export -->
+            <div class="space-y-4 pt-6 border-t border-gray-50">
+                <div class="flex items-center justify-between">
+                    <span class="section-label">Logic Pack (JSON)</span>
+                    <button onclick="copyLogicJson()" class="text-[10px] text-blue-600 font-black uppercase hover:underline">Copy Full Pack</button>
+                </div>
+                <textarea id="logicJsonArea" readonly class="w-full h-56 p-6 bg-gray-900 text-green-400 rounded-3xl text-[11px] font-mono border-none focus:ring-0 custom-scrollbar leading-relaxed"></textarea>
+            </div>
+
+            <!-- AI Prompts -->
+            <div class="space-y-4 pt-6 border-t border-gray-50">
+                <span class="section-label">Nâng cấp Logic qua AI</span>
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="bg-indigo-50 p-5 rounded-3xl border border-indigo-100 cursor-pointer mac-btn hover:bg-indigo-100" onclick="copyPromptTemplate(1)">
+                        <p class="text-[11px] font-black text-indigo-500 uppercase mb-2">Refactor hàm Phân tách</p>
+                        <p class="text-[12px] text-gray-600 leading-snug">"Sửa hàm extractLogic để ưu tiên tách dữ liệu theo logic tùy chỉnh. Đảm bảo trả về mảng khớp với số lượng cột hiện tại."</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Import -->
+            <div class="space-y-4 pt-6 border-t border-gray-50">
+                <span class="section-label">Import System Logic</span>
+                <textarea id="importJsonArea" class="w-full h-32 p-6 bg-white rounded-3xl text-[11px] font-mono border border-gray-200 focus:border-blue-500 outline-none custom-scrollbar" placeholder="Dán JSON vào đây..."></textarea>
+                <button onclick="importLogic()" class="w-full bg-blue-600 text-white py-5 rounded-3xl font-black text-sm mac-btn shadow-2xl shadow-blue-100 uppercase tracking-widest">Update Engine</button>
+            </div>
+        </div>
+    </aside>
+
+    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 bg-black text-white rounded-full text-sm font-black shadow-2xl opacity-0 transition-all z-[100] pointer-events-none backdrop-blur-xl border border-white/10">Đã sao chép!</div>
+
+    <script>
+        // --- CORE STATE ---
+        let columns = [
+            { id: 'c1', title: 'Mã' },
+            { id: 'c2', title: 'Nội dung chính' }
+        ];
+        let processedRows = [];
+        let enabledSeparators = ['|', '\t', '  '];
+        const potentialSeparators = ['|', ',', ';', ':', '/', '\\', '\t', '  ', '-', '=>', '->'];
+        
+        let currentLogic = {
+            id: "v9-separator-mgmt",
+            description: "Hệ thống cưỡng bức số tiến và tự động ánh xạ dữ liệu theo dấu ngăn cách tùy biến.",
+            outputTemplate: "{Mã}: {Nội dung chính}",
+            code: `function extractLogic(line, activeSeparators) {
+    // 1. Dọn dẹp mã Bxx cũ nếu có ở đầu dòng
+    const cleanLine = line.replace(/^[Bb]\\s*0*(\\d+)\\s*[:|-]?\\s*/, "").trim();
+    
+    // 2. Tạo regex từ danh sách separators đang kích hoạt
+    const escapedSeps = activeSeparators.map(s => s.replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&'));
+    const sepRegex = new RegExp(escapedSeps.join('|'));
+    
+    // 3. Tách dữ liệu
+    const parts = cleanLine.split(sepRegex).map(p => p.trim());
+    
+    return parts;
+}`
+        };
+
+        let extractFunc = null;
+
+        window.onload = () => {
+            const sc = localStorage.getItem('tf_v9_cols');
+            const sl = localStorage.getItem('tf_v9_logic');
+            const si = localStorage.getItem('tf_v9_input');
+            const ss = localStorage.getItem('tf_v9_seps');
+
+            if (sc) columns = JSON.parse(sc);
+            if (sl) currentLogic = JSON.parse(sl);
+            if (si) document.getElementById('rawInput').value = si;
+            if (ss) enabledSeparators = JSON.parse(ss);
+
+            document.getElementById('templateInput').value = currentLogic.outputTemplate || "";
+            updateLogicEngine();
+            refreshUI();
+            if (si) processData();
+        };
+
+        function updateLogicEngine() {
+            try {
+                const funcBody = currentLogic.code.substring(currentLogic.code.indexOf('{') + 1, currentLogic.code.lastIndexOf('}'));
+                extractFunc = new Function('line', 'activeSeparators', funcBody);
+            } catch (e) { console.error("Script Compile Error"); }
+        }
+
+        function processData() {
+            const input = document.getElementById('rawInput').value;
+            localStorage.setItem('tf_v9_input', input);
+            if (!input.trim()) { processedRows = []; renderTableBody(); return; }
+
+            const lines = input.split('\n');
+            processedRows = [];
+            
+            let sequenceCounter = 1;
+            for (const line of lines) {
+                if (!line.trim()) continue;
+                const match = line.match(/[Bb]\s*0*(\d+)/);
+                if (match) { sequenceCounter = parseInt(match[1], 10); break; }
+            }
+
+            lines.forEach((line, idx) => {
+                if (!line.trim()) return;
+                const dataParts = extractFunc(line, enabledSeparators);
+                let rowObj = { id: Date.now() + idx };
+                
+                rowObj[columns[0].id] = "B" + (sequenceCounter + idx);
+                
+                for(let i = 1; i < columns.length; i++) {
+                    rowObj[columns[i].id] = dataParts[i - 1] || "";
+                }
+                processedRows.push(rowObj);
+            });
+            renderTableBody();
+        }
+
+        function getPlaceholderValue(title, rowIndex) {
+            const t = title.toLowerCase();
+            if (t.includes('mã')) return `B${rowIndex + 1}`;
+            if (t.includes('nội dung')) return `Hạng mục mẫu số ${rowIndex + 1}`;
+            return `Mẫu dữ liệu ${title}`;
+        }
+
+        function renderRowWithTemplate(row) {
+            let template = currentLogic.outputTemplate || "";
+            columns.forEach(col => {
+                const val = row[col.id] || "";
+                const escapedTitle = col.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                template = template.replace(new RegExp(`\\{${escapedTitle}\\}`, 'g'), val);
+            });
+            return template;
+        }
+
+        // --- UI ACTIONS ---
+        function refreshUI() {
+            renderHeaders();
+            renderTableBody();
+            renderSeparatorBadges();
+            document.getElementById('logicJsonArea').value = JSON.stringify({
+                ...currentLogic, 
+                current_columns: columns.map(c => c.title),
+                active_separators: enabledSeparators
+            }, null, 2);
+        }
+
+        function renderHeaders() {
+            const row = document.getElementById('tableHeaderRow');
+            row.innerHTML = columns.map(col => `
+                <th class="py-6 px-8 border-b border-gray-100 group relative bg-white/50">
+                    <div contenteditable="true" onblur="updateColTitle('${col.id}', this.innerText)" class="editable-header text-[11px] font-black text-gray-400 uppercase tracking-widest outline-none pr-10">
+                         ${col.title}
+                    </div>
+                    <button onclick="removeColumn('${col.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition-all p-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </th>
+            `).join('');
+            localStorage.setItem('tf_v9_cols', JSON.stringify(columns));
+        }
+
+        function renderTableBody() {
+            const tbody = document.getElementById('tableBody');
+            if (processedRows.length === 0) {
+                let ghostHtml = "";
+                for (let i = 0; i < 6; i++) {
+                    ghostHtml += `<tr class="ghost-row border-b border-gray-50/50">${columns.map((c, ci) => `
+                        <td class="py-5 px-8 font-medium">
+                            <div class="ghost-text text-sm ${ci === 0 ? 'text-blue-400/50 font-black' : ''}">${getPlaceholderValue(c.title, i)}</div>
+                        </td>`).join('')}</tr>`;
+                }
+                tbody.innerHTML = ghostHtml;
+                return;
+            }
+            tbody.innerHTML = processedRows.map((row, rIdx) => `
+                <tr class="hover:bg-gray-50/70 transition-all border-b border-gray-50/50">
+                    ${columns.map((col, ci) => `
+                        <td class="py-5 px-8 ${ci === 0 ? 'font-black text-blue-600' : 'text-gray-700'}">
+                            <div contenteditable="true" onblur="updateVal(${rIdx}, '${col.id}', this.innerText)" class="editable-cell text-sm outline-none leading-relaxed">${row[col.id]}</div>
+                        </td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        // --- SEPARATOR LOGIC ---
+        function openSeparatorModal() {
+            document.getElementById('separatorModal').classList.remove('hidden');
+            document.getElementById('separatorModal').classList.add('flex');
+            detectSeparators();
+            renderSeparatorBadges();
+        }
+
+        function closeSeparatorModal() {
+            document.getElementById('separatorModal').classList.add('hidden');
+            document.getElementById('separatorModal').classList.remove('flex');
+        }
+
+        function detectSeparators() {
+            const input = document.getElementById('rawInput').value;
+            const container = document.getElementById('detectedSeparators');
+            const found = potentialSeparators.filter(s => input.includes(s) && !enabledSeparators.includes(s));
+            
+            container.innerHTML = found.length > 0 ? found.map(s => `
+                <button onclick="toggleSeparator('${s}')" class="px-3 py-1 bg-gray-100 hover:bg-blue-100 rounded-lg text-xs font-bold text-gray-500 transition-all">
+                    ${s === '\t' ? 'Tab' : (s === '  ' ? 'Spaces' : s)}
+                </button>
+            `).join('') : '<p class="text-[10px] text-gray-300 italic">Không tìm thấy dấu mới...</p>';
+        }
+
+        function renderSeparatorBadges() {
+            const container = document.getElementById('activeSeparators');
+            container.innerHTML = enabledSeparators.map(s => `
+                <div class="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-bold">
+                    <span>${s === '\t' ? 'Tab' : (s === '  ' ? 'Spaces' : s)}</span>
+                    <button onclick="toggleSeparator('${s}')" class="hover:text-red-300">×</button>
+                </div>
+            `).join('');
+            localStorage.setItem('tf_v9_seps', JSON.stringify(enabledSeparators));
+        }
+
+        function toggleSeparator(s) {
+            if (enabledSeparators.includes(s)) {
+                enabledSeparators = enabledSeparators.filter(x => x !== s);
+            } else {
+                enabledSeparators.push(s);
+            }
+            renderSeparatorBadges();
+            detectSeparators();
+        }
+
+        function addCustomSeparator() {
+            const val = document.getElementById('customSeparator').value;
+            if (val && !enabledSeparators.includes(val)) {
+                enabledSeparators.push(val);
+                document.getElementById('customSeparator').value = "";
+                renderSeparatorBadges();
+            }
+        }
+
+        // --- CORE ACTIONS ---
+        function addColumn() { columns.push({ id: 'c' + Date.now(), title: 'Cột mới' }); refreshUI(); processData(); }
+        function removeColumn(id) { if (columns.length > 1) { columns = columns.filter(c => c.id !== id); refreshUI(); processData(); } }
+        function updateColTitle(id, val) { const col = columns.find(c => c.id === id); if (col) col.title = val.trim(); localStorage.setItem('tf_v9_cols', JSON.stringify(columns)); refreshUI(); }
+        function updateTemplate(val) { currentLogic.outputTemplate = val; localStorage.setItem('tf_v9_logic', JSON.stringify(currentLogic)); }
+        function updateVal(rIdx, colId, val) { processedRows[rIdx][colId] = val; }
+        function toggleLogicSidebar() { document.getElementById('logicSidebar').classList.toggle('translate-x-full'); }
+
+        function copyFormattedOutput() {
+            if (processedRows.length === 0) return;
+            const out = processedRows.map(row => renderRowWithTemplate(row)).join('\n');
+            navigator.clipboard.writeText(out); showToast("Đã copy theo Template!");
+        }
+
+        function importLogic() {
+            try {
+                const p = JSON.parse(document.getElementById('importJsonArea').value);
+                if (p.current_columns) columns = p.current_columns.map(t => ({ id: 'c' + Math.random(), title: t }));
+                if (p.active_separators) enabledSeparators = p.active_separators;
+                currentLogic = {...currentLogic, ...p}; 
+                delete currentLogic.current_columns;
+                delete currentLogic.active_separators;
+                localStorage.setItem('tf_v9_logic', JSON.stringify(currentLogic)); 
+                localStorage.setItem('tf_v9_cols', JSON.stringify(columns));
+                localStorage.setItem('tf_v9_seps', JSON.stringify(enabledSeparators));
+                updateLogicEngine(); refreshUI(); processData();
+                showToast("System Updated!");
+            } catch (e) { alert("JSON Error."); }
+        }
+
+        function copyPromptTemplate(id) {
+            const json = document.getElementById('logicJsonArea').value;
+            navigator.clipboard.writeText(`Dựa trên Logic Pack này:\n${json}\n\nHãy cập nhật extractLogic để tách dữ liệu theo Separator tùy chỉnh.`);
+            showToast("Đã copy Prompt!");
+        }
+
+        function copyToExcel() {
+            const h = columns.map(c => c.title).join('\t');
+            const b = processedRows.map(r => columns.map(c => r[c.id]).join('\t')).join('\n');
+            navigator.clipboard.writeText(h + '\n' + b); showToast("Copied for Excel!");
+        }
+
+        function copyLogicJson() { navigator.clipboard.writeText(document.getElementById('logicJsonArea').value); showToast("Logic Pack Copied!"); }
+        function clearData() { document.getElementById('rawInput').value = ""; processedRows = []; renderTableBody(); }
+        function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2000); }
+    </script>
+</body>
+</html>
